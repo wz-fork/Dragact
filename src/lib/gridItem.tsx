@@ -3,7 +3,6 @@ import { Dragger } from './dragger/index'
 import { checkInContainer } from './util/correction';
 import { Bound } from './utils';
 
-
 export interface GridItemProps {
     /**外部容器属性 */
     col: number,
@@ -31,7 +30,7 @@ export interface GridItemProps {
 
     isUserMove: Boolean
 
-    UniqueKey?: string | number
+    UniqueKey?: string
 
     static?: Boolean
 
@@ -46,6 +45,8 @@ export interface GridItemProps {
     canDrag?: Boolean
 
     canResize?: Boolean
+
+    children: (provided: any, draggerProps: any, resizerProps: any) => any;
 }
 
 export interface GridItemEvent {
@@ -133,11 +134,22 @@ export default class GridItem extends React.Component<GridItemProps, {}> {
 
     shouldComponentUpdate(props: GridItemProps, state: any) {
 
-        return this.props.GridX !== props.GridX ||
-            this.props.GridY !== props.GridY ||
-            this.props.isUserMove !== props.isUserMove ||
-            this.props.w !== props.w ||
-            this.props.h !== props.h
+        let isUpdate = false
+        Object.keys(props).forEach((key)=>{
+            if((props as any)[key] !== (this.props as any)[key]){
+                isUpdate = true
+            }
+        })
+        return isUpdate
+
+        // return this.props.GridX !== props.GridX ||
+        //     this.props.GridY !== props.GridY ||
+        //     this.props.isUserMove !== props.isUserMove ||
+        //     this.props.w !== props.w ||
+        //     this.props.h !== props.h ||
+        //     this.props.containerWidth !== props.containerWidth ||
+        //     this.props.col !== props.col ||
+        //     this.props.rowHeight !== props.rowHeight
     }
 
     /**宽和高计算成为px */
@@ -161,12 +173,13 @@ export default class GridItem extends React.Component<GridItemProps, {}> {
 
     onDragStart(x: number, y: number) {
         const { w, h, UniqueKey } = this.props;
+
         if (this.props.static) return;
 
         const { GridX, GridY } = this.calGridXY(x, y)
 
         this.props.onDragStart && this.props.onDragStart({
-            event, GridX, GridY, w, h, UniqueKey: UniqueKey + ''
+            event: null, GridX, GridY, w, h, UniqueKey: UniqueKey + ''
         })
     }
     onDrag(event: any, x: number, y: number) {
@@ -202,12 +215,10 @@ export default class GridItem extends React.Component<GridItemProps, {}> {
         this.props.onResizeEnd && this.props.onResizeEnd({ GridX, GridY, w, h, UniqueKey: UniqueKey + '', event })
     }
     render() {
-        const { w, h, style, bounds, GridX, GridY, handle, canDrag, canResize } = this.props
-        const { x, y } = this.calGridItemPosition(GridX, GridY)
+        const { w, h, style, bounds, GridX, GridY, handle, canDrag, canResize } = this.props;
+        const { x, y } = this.calGridItemPosition(GridX, GridY);
         const { wPx, hPx } = this.calWHtoPx(w, h);
-        console.log('渲染')
         return (
-
             <Dragger
                 style={{
                     ...style,
@@ -233,9 +244,7 @@ export default class GridItem extends React.Component<GridItemProps, {}> {
                 canDrag={canDrag}
                 canResize={canResize}
             >
-                <div style={{ height: '100%', width: "100%" }}>
-                    {React.Children.map(this.props.children, (child) => child)}
-                </div>
+                {(provided, draggerProps, resizerProps) => this.props.children(provided, draggerProps, resizerProps)}
             </Dragger>
         )
     }
